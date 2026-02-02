@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Jarvis v2.0</title>
+    <style>
+        body { background: #070b14; color: #00f2ff; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .orb { width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, #00f2ff, #0044ff); box-shadow: 0 0 40px #00f2ff; cursor: pointer; transition: 0.3s; }
+        .orb:active { transform: scale(0.9); }
+        #log { margin-top: 30px; color: #94a3b8; font-family: monospace; background: #1e293b; padding: 15px; border-radius: 8px; width: 80%; max-width: 500px; height: 100px; overflow-y: auto; }
+        .active-status { color: #4ade80; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="orb" id="orb"></div>
+    <p id="status">Click the Orb to Wake Jarvis</p>
+    <div id="log">Logs will appear here...</div>
+
+    <script>
+        const orb = document.getElementById('orb');
+        const status = document.getElementById('status');
+        const log = document.getElementById('log');
+
+        const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!Recognition) {
+            alert("Bhai, tera browser Speech Recognition support nahi karta. Chrome use kar!");
+        }
+
+        const brain = new Recognition();
+        brain.continuous = true;
+        brain.interimResults = false;
+        brain.lang = 'en-US';
+
+        function speak(text) {
+            const ut = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(ut);
+        }
+
+        function addLog(msg) {
+            log.innerHTML = `> ${msg}<br>` + log.innerHTML;
+        }
+
+        brain.onstart = () => {
+            status.innerHTML = "STATUS: <span class='active-status'>JARVIS IS LISTENING</span>";
+            addLog("System Online...");
+        };
+
+        brain.onerror = (event) => {
+            addLog("Error: " + event.error);
+        };
+
+        brain.onresult = (event) => {
+            const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+            addLog("You said: " + transcript);
+
+            // Command Logic
+            if (transcript.includes("jarvis")) {
+                
+                if (transcript.includes("search for")) {
+                    let query = transcript.split("search for")[1];
+                    speak("Searching for " + query);
+                    window.open(`https://www.google.com/search?q=${query}`, "_blank");
+                } 
+                else if (transcript.includes("open youtube")) {
+                    speak("Opening YouTube");
+                    window.open("https://www.youtube.com", "_blank");
+                }
+                else if (transcript.includes("hello") || transcript.includes("wake up")) {
+                    speak("Hello Sir, how can I help you today?");
+                }
+            }
+        };
+
+        // Auto restart if it stops
+        brain.onend = () => {
+            addLog("Restarting Listener...");
+            brain.start();
+        };
+
+        orb.onclick = () => {
+            try {
+                brain.start();
+                speak("Jarvis initialized.");
+            } catch (e) {
+                addLog("Already running...");
+            }
+        };
+    </script>
+</body>
+</html>
